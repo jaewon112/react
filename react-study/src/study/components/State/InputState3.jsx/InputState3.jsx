@@ -12,7 +12,9 @@ function InputState3() {
 
     const handleOnChange = (e) => {
         const { name,value } = e.target;
+        
         setStudentInputValue(prev => ({...prev, [name]: value}));
+        // setStudentInputValue({...studentInputValue, [name]: value});
         // setStudentInputValue(prev => {
         //     return {
         //         ...prev, 

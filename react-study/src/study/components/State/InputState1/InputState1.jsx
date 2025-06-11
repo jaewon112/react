@@ -19,7 +19,7 @@ function InputState1() {
         setH1Text(inputValue)
         setH1Text1(inputValue1)
         setInputValue("");
-        setInputValue("");
+        setInputValue1("");
     }
    
     
