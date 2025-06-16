@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import IndexLayout from './components/IndexLayout/IndexLayout';
 import IndexMain from './components/IndexMain/IndexMain';
@@ -16,7 +17,6 @@ function Index(props) {
             setTodoList(localStorageTodoList);
         } else {
             setTodoList(JSON.parse(localStorageTodoList));
-            
         }
         setLoad(true);
     }, []);
@@ -57,5 +57,3 @@ function Index(props) {
 }
 
 export default Index;
-
-

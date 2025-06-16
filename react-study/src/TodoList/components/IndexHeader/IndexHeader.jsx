@@ -20,7 +20,6 @@ function IndexHeader({filter, setFilter , setSearchText}) {
     
     const handleSearchButtonOnClick = e => {
         setSearchText(searchInputValue)
-
     }
     
     const handleFilterOnChanege = e => {
