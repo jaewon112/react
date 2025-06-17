@@ -4,11 +4,13 @@ import * as s from './styles';
 import React, { useEffect, useState } from 'react';
 import { MdOutlineCheckCircle, MdOutlineErrorOutline } from 'react-icons/md';
 import { IoEye, IoEyeOff } from 'react-icons/io5';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 /**
  * 유효성 검사(Validation Check)
  */
 
-function useSignInAndUpInput({ type, name, placeholder, value, valid}) {
+function useSignInAndUpInput({ id, type, name, placeholder, value, valid }) {
      const STATUS = {
         idle: "idle",
         success: "success",
@@ -31,6 +33,7 @@ function useSignInAndUpInput({ type, name, placeholder, value, valid}) {
             setStatus(valid.regex.test(e.target.value) ? STATUS.success : STATUS.error);
             return;
         }
+        setStatus(valid.callback() ? STATUS.success : STATUS.error)
     }
 
     const isEmpty = str => {
@@ -38,33 +41,40 @@ function useSignInAndUpInput({ type, name, placeholder, value, valid}) {
     }
     
     return {
-        inputValue,
+        name,
+        value: inputValue,
+        status,
         element: <SignInAndUpInput 
-        type={type} 
-        name={name} 
-        placeholder={placeholder} 
-        value={inputValue} 
-        onChange={handleOnChange}
-        onBlur={handleOnBlur}
-        status={status}
-        message={valid.message}
+            key={id}
+            type={type} 
+            name={name} 
+            placeholder={placeholder} 
+            value={inputValue} 
+            onChange={handleOnChange}
+            onBlur={handleOnBlur}
+            status={status}
+            message={valid.message}
         />
     }
 }
 
 function SignInAndUpInput ({ type, name, placeholder, value, onChange, onBlur, status, message}) {
 
+    const { isShow, element: PasswordInputHiddenButton } = usePasswordInputHiddenButton();
+
     return (
         <div css={s.inputItem}>
             <div css={s.inputContainer(status)}>
-                <input type={type} name={name} placeholder={placeholder} value={value} onChange={onChange} onBlur={onBlur} />
+                <input type={type === "password" ? isShow ? "text" : "password" : type} name={name} placeholder={placeholder} value={value} onChange={onChange} onBlur={onBlur} />
+                {
+                    type === "password" && PasswordInputHiddenButton
+                }
                     {
                         status !== "idle"
                         && (
                             status === "success" 
                             ? <div><MdOutlineCheckCircle /></div>
                             : <div><MdOutlineErrorOutline /></div>
-                            
                         )
                     }
             </div>
@@ -73,31 +83,20 @@ function SignInAndUpInput ({ type, name, placeholder, value, onChange, onBlur, s
     )
 }
 
-function PasswordInputHiddenButton() {
+function usePasswordInputHiddenButton() {
     const [ isShow, setShow] = useState(false);
     const handleOnClick = () => {
         setShow(prev => !prev);
     }
-    return <p onClick={handleOnClick}>{isShow ? <IoEyeOff /> : <IoEye />}</p>
+    return {
+        isShow,
+        element: <PasswordInputHiddenButton isShow={isShow} onClick={handleOnClick}/>
+    }
 }
 
-function useInputValidatedMessage({defaultMessage}) {
-    const STATUS = {
-        idle: "idle",
-        success: "success",
-        error: "error",
-    }
+function PasswordInputHiddenButton({isShow, onClick}) {
 
-    const [ status, setStatus ] =useState(STATUS.idle);
-    const [ message, setMessage ] =useState(defaultMessage || "");
-
-    return {
-        status,
-        setStatus,
-        message,
-        setMessage,
-        element: <InputValidatedMessage status={status} message={message}/>
-    }
+    return <p onClick={onClick}>{isShow ? <IoEyeOff /> : <IoEye />}</p>
 }
 
 function InputValidatedMessage({status, message}) {
@@ -112,12 +111,12 @@ function InputValidatedMessage({status, message}) {
 }
 
 function Signup(props) {
-
-    
+    const navigate = useNavigate();
     const [ submitDisabled, setSubmitDisabled] = useState(true);
 
-    const [ inputs, setInputs ] = useState([
+    const inputs = [
         {
+            id: 1,
             name: "username",
             type: "text",
             placeholder: "사용자이름",
@@ -129,17 +128,19 @@ function Signup(props) {
             },
         },
         {
+            id: 2,
             name: "password",
             type: "password",
             placeholder: "비밀번호",
             value: "",
             valid: {
                 enabled: true,
-                regex: /^(?=.*[a-z])(?=.*\d).{4,20}$/,
-                message: "아이디는 영문, 숫자를 포함 4~20자여야 합니다.",
+                regex: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[~!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]).{8,20}$/,
+                message: "비밀번호는 8~20자이며, 영문·숫자·특수문자를 모두 포함해야 합니다.",
             },
         },
         {
+            id: 3,
             name: "checkPassword",
             type: "password",
             placeholder: "비밀번호 확인",
@@ -147,18 +148,72 @@ function Signup(props) {
             valid: {
                 enabled: false,
                 regex: null,
+                callback: () => inputItems[1].inputValue === inputItems[2].inputValue,
                 message: "비밀번호가 서로 일치하지 않습니다.",
             },
         },
-    ]);
+        {
+            id: 4,
+            name: "fullName",
+            type: "text",
+            placeholder: "성명",
+            value: "",
+            valid: {
+                enabled: true,
+                regex: /^[가-힣]{2,20}$/,
+                message: "이름은 한글 2~20자여야 합니다.",
+            },
+        },
+        {
+            id: 5,
+            name: "email",
+            type: "email",
+            placeholder: "이메일",
+            value: "",
+            valid: {
+                enabled: true,
+                regex: /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/,
+                message: "유효하지 않은 이메일 형식입니다.",
+            },
+        },
+    ];
 
     const inputItems = inputs.map(input => useSignInAndUpInput(input));
+
+    useEffect(() => {
+        setSubmitDisabled(!!inputItems.find(inputItem => inputItem.status !== "success"))
+    },[inputItems])
 
     
     // useEffect(() => {
     //     setSubmitDisabled(!!Object.values(inputState).map(obj => obj.status)
     //     .find(status => status !== "success"))
     // }, [inputState])
+
+    const handleRegisterOnClick = async () => {
+        const url = "http://localhost:8080/api/users";
+
+        let data = {}; //DTO 랑 같아야함.
+        inputItems.forEach(inputItem => {
+            data = {
+                ...data,
+                [inputItem.name]: inputItem.value,
+            }
+        })
+
+        try {
+            const response = await axios.post(url, data);
+            alert("사용자 등록 완료");
+            navigate("/users/signin", {
+                state: {
+                    username: response.data.username, 
+                    // password: inputItems.find(inputItem => inputItem.name === "password").value ,
+                }
+            });
+        } catch (error) {
+            alert("사용자 등록 오류");
+        }
+    }
 
     return (
         <div css={s.layout}>
@@ -168,7 +223,7 @@ function Signup(props) {
                     inputItems.map(inputItem => inputItem.element)
                 }
             </div>
-            <button css={s.submitButton} disabled={submitDisabled}>가입하기</button>
+            <button css={s.submitButton} disabled={submitDisabled} onClick={handleRegisterOnClick}>가입하기</button>
         </div>
     );
 }
