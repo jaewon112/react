@@ -24,9 +24,25 @@ import Signin from './RouterStudy/Auth/Signin/Signin'
 import Signup from './RouterStudy/Auth/Signup/Signup'
 import Mypage from './RouterStudy/Auth/Mypage/Mypage'
 import MainRouter from './RouterStudy/Auth/Routers/MainRouter'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import MainRouterReactQuery from './RouterStudy/Auth/Routers/MainRouterReactQuery'
 
 function App() {
   {/* npm run dev */}
+
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        // refetchOnWindowFocus: false,
+        // retry: 3,                // 서버에 요청을 보냈을 때 응답이 없으면 설정한 값 만큼 실행 (3번이 기본값)
+        // staleTime: 1000 * 60,    // 캐시 만료 시간
+        // gcTime: 1000 * 600,      // 설정한 시간동안 동작이 없으면 캐시 삭제
+        // enabled: false,          // 쿼리가 자동실행되는걸 통제함(true가 기본값)
+        staleTime: 1000 * 60,
+        retry: 0,   //
+      }
+    }
+  });
 
   return <BrowserRouter>
     {/* <HelloReact /> */}
@@ -47,7 +63,10 @@ function App() {
     {/* {<Router1 />} */}
     {/* {<Router2 />} */}
     {/* {<Router3 />} */}
-    <MainRouter />
+    {/* <MainRouter /> */}
+    <QueryClientProvider client={queryClient}>
+      <MainRouterReactQuery />
+    </QueryClientProvider>
     
   </BrowserRouter>
 }
